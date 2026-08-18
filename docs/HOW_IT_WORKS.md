@@ -13,23 +13,28 @@ the goal. It feeds directly into the final README.
 
 | Feature | Page | API route(s) | Table(s) touched |
 |---|---|---|---|
-| _(not built yet)_ | — | — | — |
+| Auth (login) | `app/login/page.tsx` (client) | `POST /api/auth/login` | users (read), sessions (write) |
+| Auth (who am I) | — | `GET /api/auth/me` | sessions + users (read, via JOIN) |
+| Auth (logout) | — | `POST /api/auth/logout` | sessions (delete) |
 
 ---
 
-## Feature: <feature name>
-
-_When this feature is built, its flow gets documented here like this:_
+## Feature: Auth
 
 ### Flow
-1. **Page:** ...
-2. **API route:** receives ..., does ...
-3. **SQL:** queries/inserts ... into table ...
-4. **Response:** returns ... to the page
-5. **Page:** renders ... / handles errors by ...
+1. **Page:** user submits email + password on `/login` (client component). `fetch` POSTs JSON to the API; on error shows the server's message; on success redirects by role: admin → `/admin`, student → `/dashboard`
+2. **API route (`/api/auth/login`):** reads `request.json()`, looks up the user by email via a `$1` placeholder query; compares the password with `bcrypt.compare` against the stored hash; on success generates `crypto.randomUUID()` token and INSERTs it into `sessions` with `expires_at = NOW() + INTERVAL '7 days'`; sets the `session_token` cookie (httpOnly, sameSite lax, 7-day maxAge)
+3. **SQL:** reads `users` (email match), writes `sessions` (one row per login)
+4. **Response:** `{ user: {id, name, email, role} }` — never the hash; 401 with one generic error otherwise
+5. **Page:** stores nothing but the cookie (the browser does); every later request carries it automatically
+
+### Who-am-I / logout
+- `GET /api/auth/me` → `getCurrentUser()` (in `lib/auth.ts`): reads the cookie, JOINs `sessions` → `users` on `user_id`, requires `expires_at > NOW()`, returns the user or `null` → 200 or 401
+- `POST /api/auth/logout` → DELETE the session row by token + delete the cookie
 
 ### Gotchas learned while building
-- ...
+- Cookie NAME is a contract: login sets `session_token`; every reader must ask for the same string
+- The cookie is a pointer (token) — identity is always re-derived server-side, never trusted from the client
 
 ---
 

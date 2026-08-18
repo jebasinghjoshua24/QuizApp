@@ -67,8 +67,9 @@ is tested end-to-end before moving on. Never "all API first" (untested code) or
    - Teach new syntax/concepts with real-world examples AND JavaScript
      equivalents for understanding
    - Keep the task plan updated
-   - Maintain the two project docs (section 6): log every bug found in review
-     into `docs/ERRORS.md`, keep `docs/HOW_IT_WORKS.md` current per feature
+   - Maintain the project docs (section 6): log every bug found in review into
+     `docs/ERRORS.md`, keep `docs/HOW_IT_WORKS.md` current per feature, and write
+     the `docs/WHY.md` design-decision entry **after every feature merge**
 
 2. **Architecture must be clear, scalable, and bug-friendly.**
    - Clear separation of concerns (components / pages / API / db / types / utils)
@@ -80,6 +81,26 @@ is tested end-to-end before moving on. Never "all API first" (untested code) or
    teaches with **full code examples + explanations** (the user needs to see
    syntax before they can implement an algorithm). After the switch: English
    algorithm descriptions only, code only if the user says they're stuck.
+
+4. **The algorithm-workout mode (ACTIVE since 2026-08-18):** The user asked for
+   reference-sheet learning. The AI maintains 5 lookup files in `docs/`:
+   - `REFERENCE_TYPESCRIPT.md` — language built-ins (syntax / input / output)
+   - `REFERENCE_NEXTJS.md` — framework built-ins (routing, cookies, handlers)
+   - `REFERENCE_POSTGRESQL.md` — SQL statements, types, constraints, functions
+   - `REFERENCE_REACT.md` — UI built-ins (components, state, events, JSX)
+   - `REFERENCE_TAILWIND.md` — styling utility classes (Tailwind 4, CSS-first)
+   Workflow per task:
+   1. AI gives the **algorithm in English** (what to do, in steps)
+   2. User writes the code, hunting the needed keywords/functions in the
+      reference files
+   3. AI reviews; every error gets explained with a **real-world example**
+      (what the code did vs what the feature needs) and logged in `docs/ERRORS.md`
+   - **Cheat-sheet map (in every reference file):** framework problem →
+     REFERENCE_NEXTJS.md; language problem → REFERENCE_TYPESCRIPT.md; data
+     problem → REFERENCE_POSTGRESQL.md; UI logic → REFERENCE_REACT.md;
+     styling → REFERENCE_TAILWIND.md
+   - **2-minute rule:** user searches the sheet for ~2 minutes; if still stuck,
+     they ask the AI, who gives the algorithm (not the code)
 
 ## 5. Git Workflow (mandatory for every feature)
 
@@ -112,6 +133,12 @@ the user may add own notes):
 - **`docs/HOW_IT_WORKS.md`** — the anti-blackbox doc. Traces each feature's data
   flow: request → API route → SQL → response → page. Feeds directly into the
   final README (no double work).
+- **`docs/WHY.md`** — the design-decision log. One entry per merged feature:
+  every decision, its reason, and what it avoids. This is the viva study
+  material: *"why did you build it this way?"*
+- **`docs/REFERENCE_*.md`** — five lookup sheets (TypeScript, Next.js,
+  PostgreSQL, React, Tailwind): built-in functions/keywords with syntax,
+  purpose, input, output. Used by the algorithm-workout mode (rule 4)
 
 ## 7. Task Plan (updated as we go)
 
@@ -121,8 +148,8 @@ the user may add own notes):
 | 2 | Scaffold Next.js + TypeScript project | DONE | Next.js 16.3.1, React 19, TS, Tailwind 4, no src/ dir |
 | 3 | git init + GitHub repo + initial commit | DONE | https://github.com/jebasinghjoshua24/QuizApp; no gh CLI, repo made via browser |
 | 4 | Install PostgreSQL locally | DONE | PostgreSQL 18.6, bin added to PATH, port 5432 |
-| 5 | Schema: migration SQL + seed script | in progress | feature/schema; 001_schema.sql DONE + applied; seed = 002_seed.sql next |
-| 6 | Auth: login page + API + sessions | pending | feature/auth |
+| 5 | Schema: migration SQL + seed script | DONE | feature/schema; 001_schema.sql + 002_seed.sql applied; sessions table to be added in auth feature |
+| 6 | Auth: login page + API + sessions | DONE | feature/auth; sessions table added in 003_sessions.sql; 5 reference sheets created in docs/ |
 | 7 | Admin: create questions | pending | feature/questions |
 | 8 | Admin: create assessments (time limit, link questions) | pending | feature/assessments |
 | 9 | Student dashboard (upcoming/finished) | pending | feature/student-dashboard |
@@ -142,7 +169,8 @@ QuizApp/
 │   ├── types/          # TypeScript types/shared interfaces
 │   └── utils/          # Pure helpers (validation, formatting)
 ├── migrations/         # SQL schema / migrations
-├── docs/               # ERRORS.md (learning journal), HOW_IT_WORKS.md (flows)
+├── docs/               # ERRORS.md (learning journal), HOW_IT_WORKS.md (flows),
+│                       # WHY.md (design-decision log, one entry per merge)
 └── README.md
 ```
 
@@ -155,4 +183,4 @@ QuizApp/
 - [ ] Read the task plan (section 7) and continue from where we stopped
 - [ ] Respect rule 1: never write application code myself
 - [ ] Respect rule 3: switch to algorithm-only mode when user requests it
-- [ ] Keep docs/ERRORS.md and docs/HOW_IT_WORKS.md current as we go
+- [ ] Keep docs/ERRORS.md, docs/HOW_IT_WORKS.md, docs/WHY.md current as we go
