@@ -75,11 +75,11 @@ is tested end-to-end before moving on. Never "all API first" (untested code) or
    - **Hard rule: no file may exceed 1000 lines.** If it would, split it.
    - The project structure itself should make finding bugs easy.
 
-3. **Mid-project mode switch:** At some point the user will say
-   *"don't give me example code, give me the algorithm in English."*
-   From that moment, the AI gives **English algorithm descriptions only**
-   (step-by-step what to write), NOT code. Only if the user says they're stuck
-   may the AI show code.
+3. **Code-example mode until switched:** Until the user explicitly says
+   *"don't give me example code, give me the algorithm in English"*, the AI
+   teaches with **full code examples + explanations** (the user needs to see
+   syntax before they can implement an algorithm). After the switch: English
+   algorithm descriptions only, code only if the user says they're stuck.
 
 ## 5. Git Workflow (mandatory for every feature)
 
@@ -118,10 +118,10 @@ the user may add own notes):
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 1 | Write AGENTS.md | DONE | This file |
-| 2 | Scaffold Next.js + TypeScript project | pending | create-next-app; keep its .gitignore/README, then customize |
-| 3 | git init + GitHub repo + initial commit | pending | repo via browser (no gh CLI) |
-| 4 | Install PostgreSQL locally | pending | EDB installer; user notes the password |
-| 5 | Schema: migration SQL + seed script | pending | feature/schema |
+| 2 | Scaffold Next.js + TypeScript project | DONE | Next.js 16.3.1, React 19, TS, Tailwind 4, no src/ dir |
+| 3 | git init + GitHub repo + initial commit | DONE | https://github.com/jebasinghjoshua24/QuizApp; no gh CLI, repo made via browser |
+| 4 | Install PostgreSQL locally | DONE | PostgreSQL 18.6, bin added to PATH, port 5432 |
+| 5 | Schema: migration SQL + seed script | in progress | feature/schema; 001_schema.sql DONE + applied; seed = 002_seed.sql next |
 | 6 | Auth: login page + API + sessions | pending | feature/auth |
 | 7 | Admin: create questions | pending | feature/questions |
 | 8 | Admin: create assessments (time limit, link questions) | pending | feature/assessments |
