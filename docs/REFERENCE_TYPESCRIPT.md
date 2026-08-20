@@ -113,3 +113,48 @@ algorithm and hunt here.
 - **Does:** `export` makes something available outside the file; `import` pulls
   it in. `default` = the file's main export (one per file)
 - **Input/Output:** values across files
+
+## Error handling & validation tools
+
+### `try / catch`
+- **Syntax:**
+  ```ts
+  try { ... } catch (err) { ... }
+  ```
+- **Does:** runs the try block; if anything inside throws, jumps to catch with
+  the error object
+- **Input:** the thrown error
+- **Output:** your handling code (log, return 500, etc.)
+- Express equivalent: error middleware; here we wrap routes manually
+
+### `Array.isArray(x)` — the truth about arrays
+- **Syntax:** `Array.isArray(options)`
+- **Input:** anything
+- **Output:** `true` only if it's a real array
+- **Why:** `typeof []` returns `"object"` — typeof lies about arrays. This is
+  the honest check
+
+### `Number.isInteger(x)`
+- **Input:** anything
+- **Output:** `true` only for whole numbers — and it rejects `"5"` (string),
+  `5.5`, `NaN`
+- **Use:** validating ids, indexes, marks
+
+### `JSON.stringify(x)` / `JSON.parse(x)`
+- **Syntax:** `JSON.stringify({ a: 1 })` → `'{"a":1}'` / `JSON.parse(...)` → `{ a: 1 }`
+- **Does:** object → JSON text (stringify), JSON text → object (parse)
+- **Why:** the wire (fetch bodies, responses) and the DB (`::jsonb`) talk TEXT —
+  you stringify on the way out, parse on the way in
+
+## THE falsy trap (your bug, 2026-08-19)
+
+### `!value` means "not a real value" — but it lies about 0 and ""
+- **Falsy values in JS:** `0`, `""`, `false`, `null`, `undefined`, `NaN`.
+  `!x` is true for ALL of them
+- **The bug it caused:** `if (!correctOption)` rejected `correctOption = 0` —
+  option A, a completely legal answer — as "missing"
+- **The rule:** presence-checks must be explicit:
+  `if (x === undefined || x === null)` — never `!x` when `0` or `""` are
+  legitimate values
+- **The precise tools:** `?.` (missing-safe access) and `??` (fallback) exist
+  because truthiness is blunt

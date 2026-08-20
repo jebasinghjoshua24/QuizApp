@@ -144,6 +144,24 @@ CHECK can also compare columns: `CHECK (ends_at > starts_at)`.
 - **Does:** collapses rows into groups, computing per-group values
 - JS equivalent: reduce() over a grouped map
 
+### `RETURNING` — read what you just wrote
+- **Syntax:**
+  ```sql
+  INSERT INTO questions (text, options) VALUES ($1, $2::jsonb)
+  RETURNING id, text, options, correct_option, marks;
+  ```
+- **Does:** makes INSERT/UPDATE/DELETE hand back rows like a SELECT
+- **Input:** the columns you want back
+- **Output:** `result.rows` — no second query needed to get the new row's id
+
+### The `::` cast — "treat this value AS that type"
+- **Syntax:** `$2::jsonb`, `NOW()::date`
+- **Does:** explicit type conversion — the value arrives as text, `::jsonb` makes
+  Postgres validate and store it as a JSON document
+- **Input:** value + target type
+- **Why we need it:** `options` comes from Node as a JSON *string*
+  (`JSON.stringify`); without the cast Postgres would complain or store a string
+
 ## Running SQL
 
 | Command | Does |

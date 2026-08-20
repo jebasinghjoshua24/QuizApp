@@ -49,6 +49,20 @@ Rules: only `route.ts` and `page.tsx` are special; any other `.ts` file inside
 - **Gotcha:** the status goes INSIDE the call as the 2nd argument. A closing
   paren in the wrong place silently changes what's returned
 
+### HTTP status codes — the language of responses
+| Code | Meaning | We use it for |
+|---|---|---|
+| 200 | OK | successful reads/actions |
+| 201 | Created | resource made (POST questions) |
+| 400 | Bad request | client sent nonsense (validation failed) |
+| 401 | Unauthorized | not logged in / bad credentials |
+| 403 | Forbidden | logged in, but wrong role |
+| 404 | Not found | URL or resource doesn't exist |
+| 500 | Server error | our code threw (the catch-all) |
+
+Rule of thumb: 4xx = the CLIENT's fault (tell them what), 5xx = OUR fault
+(never leak details — generic message, log it).
+
 ## Cookies
 
 ### `cookies()` from `next/headers`

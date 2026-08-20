@@ -66,6 +66,9 @@ Pages arrange components like a mall floor plan arranges kiosks.
 - **Output:** a pair: [current value, setter function]
 - **Why "const"?** you never reassign `email` — you call `setEmail`, which
   makes React re-run the function with the new value
+- **Typing arrays:** `useState([])` infers `never[]` (TS: "array of nothing").
+  Label it: `useState<Question[]>([])` — the generic tells TS what the array
+  holds, so `q.id` in a `.map` is legal and autocompleted
 
 ### Controlled inputs (forms)
 - **Syntax:**

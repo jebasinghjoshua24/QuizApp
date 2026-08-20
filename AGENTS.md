@@ -101,6 +101,18 @@ is tested end-to-end before moving on. Never "all API first" (untested code) or
      styling → REFERENCE_TAILWIND.md
    - **2-minute rule:** user searches the sheet for ~2 minutes; if still stuck,
      they ask the AI, who gives the algorithm (not the code)
+   - **Sheets stay complete:** whenever the user's code introduces a built-in
+     not yet in the sheets (e.g. RETURNING, `::jsonb`, `try/catch`), the AI adds
+     it to the right sheet during that review — the sheets are a living index
+
+5. **Styling carve-out (decided 2026-08-19):** Tailwind/CSS is NOT in the
+   learning stack (that's TS, Next.js, PostgreSQL, backend). The user is weak
+   at CSS and styling eats project time. DECISION: **the AI writes ALL styling**
+   (className strings, layout, the final polish pass); **the user writes ALL
+   logic** (state, handlers, data flow, SQL, routes, types). The AI explains
+   styling choices in plain English so the user can read/debug them. The user
+   learns to READ Tailwind, not to author it. ERRORS.md stops logging styling
+   mistakes (they're the AI's domain now).
 
 ## 5. Git Workflow (mandatory for every feature)
 
@@ -150,7 +162,7 @@ the user may add own notes):
 | 4 | Install PostgreSQL locally | DONE | PostgreSQL 18.6, bin added to PATH, port 5432 |
 | 5 | Schema: migration SQL + seed script | DONE | feature/schema; 001_schema.sql + 002_seed.sql applied; sessions table to be added in auth feature |
 | 6 | Auth: login page + API + sessions | DONE | feature/auth; sessions table added in 003_sessions.sql; 5 reference sheets created in docs/ |
-| 7 | Admin: create questions | pending | feature/questions |
+| 7 | Admin: create questions | in progress | feature/questions branch created (empty); step 1 = POST /api/questions algorithm given, not yet written |
 | 8 | Admin: create assessments (time limit, link questions) | pending | feature/assessments |
 | 9 | Student dashboard (upcoming/finished) | pending | feature/student-dashboard |
 | 10 | Exam page + timer auto-submit | pending | feature/exam |

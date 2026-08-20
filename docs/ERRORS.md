@@ -57,3 +57,29 @@ the viva/demo — it proves how much you learned.
 - **What it should do:** delete all four junk imports; `useRouter` from `next/navigation`; email onChange must call its own setter
 - **Lesson:** autocomplete betrays — when you type a common word (json, serialize, cat), the IDE offers imports you never meant. Rule: **if you didn't intend the import, delete it**; and before writing `onChange`, check the state setter you're supposed to call. Also: controlled input = value comes FROM state — if the setter never fires, the field looks dead.
 - **Also:** a `name` state + input existed but the login API only accepts email+password — a phantom field that does nothing. The page showed a field the backend ignores.
+
+### [2026-08-19] — POST /api/questions (feature/questions)
+- **What I wrote:** `if(!text || !options || !correctOption || !marks)` — a presence check built on falsy values
+- **What it did:** rejected perfectly valid questions whose correct answer is option A — `correctOption = 0` is legal (schema allows 0–3), but `!0` is `true` in JS, so the route answered 400 "Missing required fields!" for a complete, valid payload
+- **What it should do:** check for absence explicitly: `correctOption === undefined || correctOption === null` — `0` is a real value and must pass
+- **Lesson:** JS truthiness is blunt — `0`, `""`, `false` are "falsy" but legitimate data. `!x` says "x has no value"; it's only safe when `0`/`""` can't occur. Real-world: a shop's `if (!items)` rejects a customer genuinely buying zero items. Presence ≠ truthiness — use `=== undefined` / `=== null`, or `??`/`?.`
+- **Also in the same file:** the range error said "must be between **1 and 3**" while the code accepts **0–3** — a message contradicting its own validation (copy-paste drift; the message lied about the door). Plus two typos: "mush" → "must", "Happned" → "Happened". Error text is part of the product — users read it.
+
+### [2026-08-19] — Admin question form (feature/questions)
+- **What I wrote:** `const [questions, setQuestions] = useState([])` then `questions.map((q) => q.id)`
+- **What it did:** TypeScript error `Property 'id' does not exist on type 'never'` — an empty array with no type gets inferred as `never[]` ("array of nothing"), so `q` is `never` and using its fields is illegal
+- **What it should do:** label the array with its element type — `useState<Question[]>([])` where `Question` is an interface in `lib/types.ts`
+- **Lesson:** TypeScript's inference is honest — given no hint, it assumes the safest (most restrictive) thing. Untyped state is an unlabeled box; the generic `useState<T[]>` is the label. This is WHY we have a `types/` shelf: shapes that travel between API and page live in one typed place, so the compiler guards both ends.
+
+### [2026-08-19] — Admin question pool not updating (feature/questions)
+- **What I wrote:** `useEffect(() => { fetch("/api/questions")... }, [])` — fetch the pool once on mount, and nothing else
+- **What it did:** after creating a question, the form cleared and showed "Question created" — but the pool below showed the OLD list. The pool only updated on a manual browser refresh
+- **What it should do:** refetch the pool after a successful POST so the list is always current
+- **Fix:** extract the fetch into one function `loadQuestions()`; call it from the `useEffect` (mount) AND from `handleSubmit` right after success. One definition, two call sites — DRY
+- **Lesson:** an empty dependency array `[]` is not "fetch whenever I want" — it is "fetch exactly once, when the component mounts." Any place the data can change needs its own call. The symptom "list is stale until I refresh" almost always means "I forgot to refetch after a mutation."
+
+### [2026-08-19] — Runtime SyntaxError "JSON.parse: unexpected character at line 1 column 1" (feature/questions)
+- **What I wrote:** `const res = await fetch("/pai/questions");` — typo: **pai** instead of **api**
+- **What it did:** the fetch hit a route that doesn't exist → Next returned its **HTML 404 page** → `res.json()` tried to parse HTML → JSON.parse choked on the `<` at line 1 column 1 → unhandled promise rejection surfaced as a Runtime SyntaxError
+- **What it should do:** fetch `/api/questions`; and before `res.json()`, check `res.ok` so a bad URL shows a readable message instead of a parse crash
+- **Lesson:** `res.json()` ASSUMES the response body is JSON. The error "unexpected character at line 1 column 1" is the fingerprint for "I got HTML/text, not JSON" (usually a 404 page or a redirect). Always verify `res.ok` before parsing, and double-check URLs character by character — one swapped letter turns a working route into a 404.
