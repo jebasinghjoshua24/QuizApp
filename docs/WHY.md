@@ -142,3 +142,75 @@ Pages get functional styling as they're built (so testing isn't painful); the
 visual pass (animations, spacing, design system) is deliberately deferred to
 `feature/polish` — styling before the features exist would be re-styling. Form
 first, then polish — the professional order.
+
+---
+
+## feature/questions — merged 2026-08-19
+
+### Why the API validates what the DB already enforces
+The schema's CHECK constraints (4 options, index 0–3) are the *last* line of
+defense — they stop invalid rows from existing. But a constraint violation
+surfaces as an ugly 500. The API re-checks the same rules *before* the query so
+the user gets a clean 400 with a readable message ("Options must be exactly 4").
+Same rules, two layers: friendly errors at the door, absolute safety at the vault.
+
+### Why explicit `=== undefined` checks instead of truthiness
+`!correctOption` would reject `0` — a valid answer index. Truthiness says "0 is
+nothing," which is wrong for an index. The explicit `x === undefined || x === null`
+check asks exactly "is the field missing?", the precise question validation
+needs. This is the "falsy trap": `0`, `""`, and `false` are all "falsey" but
+often perfectly legal values.
+
+### Why `$2::jsonb` instead of a plain parameter
+The options array arrives as a JS array; pg needs to know the target type to
+serialize it correctly. The `::jsonb` cast tells Postgres "treat this text as
+JSONB," which also runs the DB's own JSON validation on the way in. The JS
+equivalent: `JSON.stringify` in the values array pairs with the cast in the SQL.
+
+### Why `RETURNING` instead of a second SELECT
+INSERT + SELECT back = two round trips and a window where a bug could hide
+between them. `RETURNING` hands the inserted row back in the same statement —
+one trip, guaranteed-consistent snapshot. The page then shows the new question
+without ever re-reading the whole table.
+
+### Why GET wraps rows in `{ questions: [...] }`
+A bare array in JSON is fragile — an object envelope leaves room to grow
+(pagination, count) without breaking every consumer later. The page reads
+`data.questions`; if we later add `{ questions, total }`, existing code keeps
+working. Shape changes become additions, not breaking changes.
+
+### Why the pool refetches after a create (read-after-write)
+Data that changed on screen must match the data on the server. After POST
+succeeds, the page refetches the pool — the list is the server's answer, not a
+client-side guess. The alternative (optimistically appending the returned row)
+saves one request but can drift out of sync (ordering, ids, server-side edits).
+For our scale, correctness beats one HTTP call.
+
+### Why one `loadQuestions()` function used twice (DRY)
+Mount and post-create both need the same fetch. Two copies of the fetch would
+mean two places to fix when the API changes — and drift (one copy still hitting
+a typo'd URL, as happened). One definition, two call sites: the function is
+the single source of truth for "how the pool loads." The empty `[]` dependency
+array is the "run once on mount" switch — an effect with *no* array runs on
+every render, which we learned the hard way becomes an infinite fetch loop.
+
+### Why `lib/types.ts` holds the shared `Question` interface
+The same shape crosses the API boundary (snake_case DB columns) into the page.
+One interface in one file means the compiler guards both ends: if the API or
+the page drifts from the shape, TypeScript fails the build instead of the
+runtime. This is the `types/` shelf from the architecture plan — the contract
+between backend and frontend, written once.
+
+### Why the admin page combines form + pool on one screen
+Creating a question is an *edit* operation: you type, you see it land. Splitting
+form and pool into two pages would break the feedback loop (did it save?).
+The two-column layout shows cause and effect side by side — form left, result
+right — so the admin always sees the consequence of their action without
+navigating.
+
+### Why the styling carve-out (Rule 5) applied to these pages
+Login and admin now share one visual language (gray page, white cards, blue
+buttons, red/green alert boxes). The user authors the logic; the AI authors the
+Tailwind — so consistency is automatic instead of aspirational. The user can
+still *read* every class (they're plain-English utilities), which is enough to
+debug. Styling stays out of the learning stack and out of the critical path.
