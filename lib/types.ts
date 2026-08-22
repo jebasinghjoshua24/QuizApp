@@ -23,3 +23,18 @@ export interface AssessmentWithQuestions {
         order_index: number;
     }[];
 };
+
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+}
+
+export interface FinishedItem {
+    id: number;
+    title: string;
+    show_result: boolean;
+    score: number;
+    submitted_at: string;
+}

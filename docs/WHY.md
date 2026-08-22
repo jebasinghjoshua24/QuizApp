@@ -291,3 +291,46 @@ Two admin managers share one segment (`/admin`). A pill nav (`Questions` /
 earlier `← Back` button hid the feature. The nav lives in each page's header
 (styling domain) so the logic page stays focused, and `router.push` keeps it a
 client navigation without a full reload.
+
+---
+
+## feature/student-dashboard — merged 2026-08-22
+
+### Why one dashboard route returns `{ user, upcoming, finished }`
+The page needs three things that all depend on **who you are**: your profile,
+what you haven't tried, and what you've finished. One `getCurrentUser()` call
+gives the `user.id`; two queries reuse it. One round-trip, one auth check, one
+JSON shape. The alternative — `GET /api/auth/me` + `GET /api/assessments` +
+`GET /api/attempts` — would be three trips, three auth checks, and client-side
+joining. Vertical slice: one request → one response → one render.
+
+### Why `NOT IN` for upcoming
+"Upcoming" is defined as **not-yet-attempted**, not "future window." `WHERE id
+NOT IN (SELECT assessment_id FROM attempts WHERE student_id = $1)` is the
+declarative version of "everything except what you've touched." A `LEFT JOIN`
++ `WHERE attempt.id IS NULL` would do the same, but `NOT IN` reads as the
+product rule. The `|| []` fallback in the response (`upcoming.rows || []`)
+keeps `upcoming.map` from throwing when the subquery returns no rows.
+
+### Why finished is a `JOIN` with `status = 'submitted'`
+A finished assessment is a **completed sitting**, not just an assessment row.
+`attempts` holds the sitting (`score`, `submitted_at`, `status`), `assessments`
+holds the display (`title`, `show_result`). `JOIN` brings the display next to
+the score so the page doesn't need a second lookup. `status = 'submitted'`
+excludes `in_progress` attempts that haven't been scored yet.
+
+### Why `show_result` is a display rule, not a data filter
+The API always returns `score` and `show_result` together; the page decides
+`show_result ? Score : "Results hidden"`. Hiding at the API would mean two
+different shapes for the same row, and the admin couldn't preview what the
+student sees. Visibility lives next to the data it controls (on the assessment),
+but the decision to render lives in the UI — one switch, one place, no data
+deletion.
+
+### Why the dashboard page is one client component with one `useEffect`
+`upcoming` and `finished` are derived together from one fetch. One `useEffect`
+with `[]` → `loadData()` that sets all three states keeps the dashboard
+consistent (no half-loaded state where upcoming is new but finished is stale).
+`error` lives at the top so either query failing shows one banner. `User |
+null` (not `User[]`) is the honest type — a profile is one object, and `null`
+while loading is a real state the UI handles.

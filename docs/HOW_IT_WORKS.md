@@ -18,6 +18,7 @@ the goal. It feeds directly into the final README.
 | Auth (logout) | — | `POST /api/auth/logout` | sessions (delete) |
 | Admin: create question | `app/admin/page.tsx` (client) | `POST /api/questions`, `GET /api/questions` | questions (write + read) |
 | Admin: create assessment | `app/admin/assessments/page.tsx` (client) | `POST /api/assessments`, `GET /api/assessments`, `GET /api/questions` (pool) | assessments (write), assessment_questions (write), questions (read) |
+| Student dashboard | `app/dashboard/page.tsx` (client) | `GET /api/student/dashboard` | assessments (read), attempts (read), users (read via getCurrentUser) |
 
 ---
 
@@ -64,6 +65,25 @@ the goal. It feeds directly into the final README.
 - Without `FILTER (WHERE q.id IS NOT NULL)`, an empty assessment becomes `[{"id":null,…}]` instead of `[]`.
 - Copy-paste of `loadAssessments` → `loadQuestions` needs URL, setter, and error message all renamed — miss one and the picker stays empty.
 - `datetime-local` AM/PM: `02:00` vs `14:00` is a 12-hour gap; future-start validation correctly rejected the AM time, but a generic "Bad Request" hid it until specific messages were added.
+
+---
+
+## Feature: Student dashboard
+
+### Flow
+1. **API (`GET /api/student/dashboard`):** `getCurrentUser()` → 401/403 if not a student; two reads: **upcoming** = `SELECT ... FROM assessments WHERE id NOT IN (SELECT assessment_id FROM attempts WHERE student_id = $1)` (everything you haven't touched), **finished** = `SELECT a.id, a.title, a.show_result, att.score, att.submitted_at FROM attempts att JOIN assessments a ON a.id = att.assessment_id WHERE att.student_id = $1 AND status = 'submitted'`; returns `{ user, upcoming: rows, finished: rows }` (rows with `|| []` so the page never crashes on empty).
+2. **Page (`/dashboard`, client):** `useEffect(..., [])` fetches the one dashboard route, checks `!res.ok` before `res.json()`, stores `user` + both arrays; `user` is `User | null` (one object, not an array), `upcoming`/`finished` are typed arrays.
+3. **Profile card (top):** shows `user.name` bold, `user.email` gray, role pill — the `user` comes from the same dashboard response, no second fetch to `/api/auth/me`.
+4. **Upcoming section:** `upcoming.map(a => <div key={a.id}>` with `a.title`, window `new Date(a.starts_at).toLocaleString() → ...`, duration, and **Start** button `router.push(\`/exam/${a.id}\`)` (placeholder until exam feature).
+5. **Finished section:** `finished.map(f => <div key={f.id}>` with `f.title`, date, and `f.show_result ? \`Score: ${f.score}\` : "Results hidden"` — visibility is a display rule, the data is always returned.
+
+### Gotchas learned while building (student dashboard)
+- `NOT IN (SELECT ...)` is "everything except what you've touched" — the student equivalent of "upcoming."
+- `pool.query` returns `{ rows }`, not the array — returning the whole object makes `upcoming.map` throw "not a function."
+- `submmitted_at` vs `submitted_at` — one extra `m` → Postgres 500 "column does not exist," literal to the letter.
+- `User[]` vs `User | null` — a profile is one object, not a list; `useState<User[]>([])` types `user.name` as `undefined`.
+- `useState([])` → `never[]` again — every array state needs its generic label, even on the dashboard.
+- `loadData` defined but never called (no `useEffect`) → page fetched nothing; data fetched but never stored (`setUser` etc. missing) → still empty.
 
 ---
 

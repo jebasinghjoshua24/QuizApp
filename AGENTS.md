@@ -132,8 +132,8 @@ the user may add own notes):
 | 5 | Schema: migration SQL + seed script | DONE | feature/schema; 001_schema.sql + 002_seed.sql applied; sessions table to be added in auth feature |
 | 6 | Auth: login page + API + sessions | DONE | feature/auth; sessions table added in 003_sessions.sql; 5 reference sheets created in docs/ |
 | 7 | Admin: create questions | DONE | feature/questions merged; POST + GET /api/questions, admin page (form + live pool), lib/types.ts, login page restyled |
-| 8 | Admin: create assessments (time limit, link questions) | in progress | feature/assessments; POST /api/assessments written + fixed; GET + admin page next |
-| 9 | Student dashboard (upcoming/finished) | pending | feature/student-dashboard |
+| 8 | Admin: create assessments (time limit, link questions) | DONE | feature/assessments merged; POST + GET /api/assessments, admin page (form + picker + roster + nav), lib/types.ts, specific 400s, jsonb_agg fix |
+| 9 | Student dashboard (upcoming/finished) | DONE | feature/student-dashboard merged; GET /api/student/dashboard (upcoming/finished + profile), dashboard page (profile + upcoming/finished lists), lib/types.ts |
 | 10 | Exam page + timer auto-submit | pending | feature/exam |
 | 11 | Results + visibility control | pending | feature/results |
 | 12 | Test, polish, README.md | pending | feature/polish; includes statistics dashboard (per-assessment graphs, leaderboards, overview line chart) |
