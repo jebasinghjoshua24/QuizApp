@@ -154,6 +154,128 @@ CHECK can also compare columns: `CHECK (ends_at > starts_at)`.
 - **Input:** the columns you want back
 - **Output:** `result.rows` — no second query needed to get the new row's id
 
+### `BEGIN` / `COMMIT` / `ROLLBACK` — transactions (all-or-nothing)
+- **Syntax:**
+  ```sql
+  BEGIN;
+  INSERT ...;
+  INSERT ...;
+  COMMIT;   -- both inserts become permanent together
+  -- on error instead: ROLLBACK; -- both inserts vanish
+  ```
+- **Does:** groups statements into ONE atomic unit: either every statement
+  succeeds (COMMIT) or none of them do (ROLLBACK). The DB holds the changes
+  invisibly until COMMIT — other queries can't see them mid-transaction
+- **From Node:** a client is needed (`pool.connect()` → `client.query('BEGIN')`
+  ... `client.query('COMMIT')` / `'ROLLBACK'`), because transactions must run
+  on ONE connection; `pool.query` grabs a random connection per call
+- **Why we need it:** creating an assessment = INSERT assessment + INSERT N
+  links. If link 3 fails, without a transaction we'd have a half-made
+  assessment with 2 links. With BEGIN/COMMIT, the whole thing is saved or
+  nothing is. JS equivalent: two commits in git — either both land or neither
+
+### `json_agg(...)` — build an array of rows inside SQL
+- **Syntax:**
+  ```sql
+  SELECT a.id, a.title,
+         json_agg(json_build_object('id', q.id, 'text', q.text)) AS questions
+  FROM assessments a
+  LEFT JOIN assessment_questions aq ON aq.assessment_id = a.id
+  LEFT JOIN questions q ON q.id = aq.question_id
+  GROUP BY a.id;
+  ```
+- **Does:** collects all matching child rows (one per question) into a JSON
+  array on the parent row — the nested-object problem solved IN the query
+- **Input:** an expression (usually a json_build_object call) + you must GROUP
+  BY every parent column you select
+- **Output:** a JSONB array per parent row. JS equivalent: `groupBy` + map
+- **Gotcha:** with LEFT JOIN, a parent with no children yields `null` —
+  wrap it: `COALESCE(json_agg(...), '[]'::jsonb)` so it's always an array
+
+### `json_build_object('key', value, ...)` — a JSON object from columns
+- **Syntax:** `json_build_object('id', q.id, 'marks', aq.marks)`
+- **Does:** assembles a JSON object whose keys are the strings and values are
+  the columns — the shape of what json_agg collects
+- **Output:** a JSON object; feeds directly into json_agg as its argument
+
+### `LEFT JOIN` — keep parents even with no children
+- **Syntax:** `FROM assessments a LEFT JOIN assessment_questions aq ON ...`
+- **Does:** returns ALL left-table rows; unmatched ones get NULL for the right
+  table's columns (plain JOIN would drop a parent with zero questions)
+- **Input:** same as JOIN; the word LEFT changes the "keep" rule
+
+### `COALESCE(a, b, ...)` — first non-NULL
+- **Syntax:** `COALESCE(x, '[]'::jsonb)`
+- **Does:** returns the first argument that isn't NULL
+- **Why we need it:** turns "no questions → NULL" into "no questions → []"
+
+### `GROUP BY` + aggregates
+- **Syntax:** `SELECT assessment_id, SUM(marks) FROM answers GROUP BY assessment_id`
+- **Does:** collapses rows into groups, computing per-group values; every
+  column in SELECT that isn't an aggregate MUST appear in GROUP BY
+- JS equivalent: reduce() over a grouped map
+
+### `BEGIN` / `COMMIT` / `ROLLBACK` — transactions (all-or-nothing)
+- **Syntax:**
+  ```sql
+  BEGIN;
+  INSERT ...;
+  INSERT ...;
+  COMMIT;   -- both inserts become permanent together
+  -- on error instead: ROLLBACK; -- both inserts vanish
+  ```
+- **Does:** groups statements into ONE atomic unit: either every statement
+  succeeds (COMMIT) or none of them do (ROLLBACK). The DB holds the changes
+  invisibly until COMMIT — other queries can't see them mid-transaction
+- **From Node:** a client is needed (`pool.connect()` → `client.query('BEGIN')`
+  ... `client.query('COMMIT')` / `'ROLLBACK'`), because transactions must run
+  on ONE connection; `pool.query` grabs a random connection per call
+- **Why we need it:** creating an assessment = INSERT assessment + INSERT N
+  links. If link 3 fails, without a transaction we'd have a half-made
+  assessment with 2 links. With BEGIN/COMMIT, the whole thing is saved or
+  nothing is. JS equivalent: two commits in git — either both land or neither
+
+### `json_agg(...)` — build an array of rows inside SQL
+- **Syntax:**
+  ```sql
+  SELECT a.id, a.title,
+         json_agg(json_build_object('id', q.id, 'text', q.text)) AS questions
+  FROM assessments a
+  LEFT JOIN assessment_questions aq ON aq.assessment_id = a.id
+  LEFT JOIN questions q ON q.id = aq.question_id
+  GROUP BY a.id;
+  ```
+- **Does:** collects all matching child rows (one per question) into a JSON
+  array on the parent row — the nested-object problem solved IN the query
+- **Input:** an expression (usually a json_build_object call) + you must GROUP
+  BY every parent column you select
+- **Output:** a JSONB array per parent row. JS equivalent: `groupBy` + map
+- **Gotcha:** with LEFT JOIN, a parent with no children yields `null` —
+  wrap it: `COALESCE(json_agg(...), '[]'::jsonb)` so it's always an array
+
+### `json_build_object('key', value, ...)` — a JSON object from columns
+- **Syntax:** `json_build_object('id', q.id, 'marks', aq.marks)`
+- **Does:** assembles a JSON object whose keys are the strings and values are
+  the columns — the shape of what json_agg collects
+- **Output:** a JSON object; feeds directly into json_agg as its argument
+
+### `LEFT JOIN` — keep parents even with no children
+- **Syntax:** `FROM assessments a LEFT JOIN assessment_questions aq ON ...`
+- **Does:** returns ALL left-table rows; unmatched ones get NULL for the right
+  table's columns (plain JOIN would drop a parent with zero questions)
+- **Input:** same as JOIN; the word LEFT changes the "keep" rule
+
+### `COALESCE(a, b, ...)` — first non-NULL
+- **Syntax:** `COALESCE(x, '[]'::jsonb)`
+- **Does:** returns the first argument that isn't NULL
+- **Why we need it:** turns "no questions → NULL" into "no questions → []"
+
+### `GROUP BY` + aggregates
+- **Syntax:** `SELECT assessment_id, SUM(marks) FROM answers GROUP BY assessment_id`
+- **Does:** collapses rows into groups, computing per-group values; every
+  column in SELECT that isn't an aggregate MUST appear in GROUP BY
+- JS equivalent: reduce() over a grouped map
+
 ### The `::` cast — "treat this value AS that type"
 - **Syntax:** `$2::jsonb`, `NOW()::date`
 - **Does:** explicit type conversion — the value arrives as text, `::jsonb` makes

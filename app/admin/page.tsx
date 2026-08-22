@@ -69,12 +69,20 @@ export default function Admin() {
             <h1 className="text-xl font-bold text-gray-900">Question Manager</h1>
             <p className="text-sm text-gray-500">Create and review MCQ questions</p>
           </div>
-          <button
-            onClick={() => router.push("/")}
-            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            Log out →
-          </button>
+          <div className="flex items-center gap-3">
+            <nav className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+              <span className="bg-white shadow-sm text-gray-900 rounded-full px-3 py-1.5 text-sm font-medium">Questions</span>
+              <button onClick={() => router.push("/admin/assessments")} className="text-gray-600 hover:text-gray-900 rounded-full px-3 py-1.5 text-sm font-medium transition-colors">
+                Assessments
+              </button>
+            </nav>
+            <button
+              onClick={() => router.push("/")}
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Log out →
+            </button>
+          </div>
         </div>
       </header>
 

@@ -1,23 +1,16 @@
 # AGENTS.md — QuizApp Project Context (MANDATORY READ)
-
 This file is the source of truth for this project. Every new session **must** read
 this file first. It captures the goal, stack, rules, architecture plan, and
 workflow so context is never lost.
-
 ---
-
 ## 1. The Project
-
 A **Quiz App** for a college unit project. It will be used to demonstrate
 learning of a new stack: **TypeScript, Next.js, PostgreSQL, and a backend** on
 top of the existing React knowledge.
-
 **Timeline: 2 weeks requested (deadline increase approved by student to ask for).**
 MVP delivered in 7–9 days, remaining time = buffer, polish, tests, README.
 The MVP itself is what we demo.
-
 ## 2. The Stack (what we learn while building) — DECISIONS LOCKED
-
 | Piece | Status | Decision |
 |---|---|---|
 | React | Already know — foundation | — |
@@ -26,39 +19,30 @@ The MVP itself is what we demo.
 | PostgreSQL | Learning (new) | **Local install** (EDB installer, no Docker) |
 | Backend (API layer) | Learning (new) | **Next.js API routes** (one codebase, one server) |
 | Auth | Learning (new) | **Seed users + sessions** (no registration page) |
-
 **Build order = vertical slices:** each feature touches DB + API + page together and
 is tested end-to-end before moving on. Never "all API first" (untested code) or
 "all frontend first" (throwaway mock data).
-
 > **IMPORTANT — Next.js 16:** This version has breaking changes vs. older versions
 > (APIs, conventions, file structure). Before writing Next.js code, read the local
 > docs in `node_modules/next/dist/docs/` and heed deprecation notices. The `next dev`
 > command re-writes this note into AGENTS.md — keep it committed with our work.
-
 ## 3. Features (MVP scope)
-
 ### Auth
 - Login page with two roles:
   - **Student login**
   - **Admin login**
-
 ### Student Dashboard
 - **Upcoming assessments** (list of not-yet-attempted assessments)
 - **Finished assessments** with their **results**
-
 ### Exam Page
 - Student attends an assessment containing **MCQ questions**
 - **Timer** that counts down and **auto-submits** when time runs out
-
 ### Admin Dashboard
 - **Create questions** (MCQ)
 - **Create/manage assessments** (group questions, assign time limit)
 - **See marks/results** of students who attended an assessment
 - **Controls** over visibility, e.g. whether a student can see their result or not
-
 ## 4. THE RULES (non-negotiable)
-
 1. **The user writes ALL the code.** The AI (me) never writes application code.
    My job:
    - Split the project into manageable tasks
@@ -70,18 +54,13 @@ is tested end-to-end before moving on. Never "all API first" (untested code) or
    - Maintain the project docs (section 6): log every bug found in review into
      `docs/ERRORS.md`, keep `docs/HOW_IT_WORKS.md` current per feature, and write
      the `docs/WHY.md` design-decision entry **after every feature merge**
-
 2. **Architecture must be clear, scalable, and bug-friendly.**
    - Clear separation of concerns (components / pages / API / db / types / utils)
    - **Hard rule: no file may exceed 1000 lines.** If it would, split it.
    - The project structure itself should make finding bugs easy.
-
-3. **Code-example mode until switched:** Until the user explicitly says
-   *"don't give me example code, give me the algorithm in English"*, the AI
-   teaches with **full code examples + explanations** (the user needs to see
-   syntax before they can implement an algorithm). After the switch: English
-   algorithm descriptions only, code only if the user says they're stuck.
-
+3. **Code-example mode: RETIRED (2026-08-21).** Superseded by rule 4 — the
+   algorithm-workout mode is the standing mode: English algorithms, user writes
+   code, AI reviews. Code appears only when the user is stuck and asks.
 4. **The algorithm-workout mode (ACTIVE since 2026-08-18):** The user asked for
    reference-sheet learning. The AI maintains 5 lookup files in `docs/`:
    - `REFERENCE_TYPESCRIPT.md` — language built-ins (syntax / input / output)
@@ -104,7 +83,6 @@ is tested end-to-end before moving on. Never "all API first" (untested code) or
    - **Sheets stay complete:** whenever the user's code introduces a built-in
      not yet in the sheets (e.g. RETURNING, `::jsonb`, `try/catch`), the AI adds
      it to the right sheet during that review — the sheets are a living index
-
 5. **Styling carve-out (decided 2026-08-19):** Tailwind/CSS is NOT in the
    learning stack (that's TS, Next.js, PostgreSQL, backend). The user is weak
    at CSS and styling eats project time. DECISION: **the AI writes ALL styling**
@@ -113,9 +91,7 @@ is tested end-to-end before moving on. Never "all API first" (untested code) or
    styling choices in plain English so the user can read/debug them. The user
    learns to READ Tailwind, not to author it. ERRORS.md stops logging styling
    mistakes (they're the AI's domain now).
-
 ## 5. Git Workflow (mandatory for every feature)
-
 Every feature follows this exact flow:
 1. `git checkout main` (start clean)
 2. Create a **feature branch**: `git checkout -b feature/<name>`
@@ -125,20 +101,15 @@ Every feature follows this exact flow:
 6. `git checkout main`
 7. **Merge** the feature branch into main
 8. **Push** to remote
-
 Result: a clean commit history where each feature is one branch/merge.
-
 ## 6. Documentation Deliverable
-
 A **professional README.md** at the end covering:
 - What stack we use (and why)
 - What the code does
 - What problem it solves
 - How someone else can set it up and use it for themselves
-
 Plus **two living docs** maintained throughout the project (the AI maintains them,
 the user may add own notes):
-
 - **`docs/ERRORS.md`** — the learning journal. One entry per bug found in code
   review: date, feature, what the user's code did, what it should do, the lesson.
   This is the user's study material for the viva/demo.
@@ -151,9 +122,7 @@ the user may add own notes):
 - **`docs/REFERENCE_*.md`** — five lookup sheets (TypeScript, Next.js,
   PostgreSQL, React, Tailwind): built-in functions/keywords with syntax,
   purpose, input, output. Used by the algorithm-workout mode (rule 4)
-
 ## 7. Task Plan (updated as we go)
-
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 1 | Write AGENTS.md | DONE | This file |
@@ -163,14 +132,12 @@ the user may add own notes):
 | 5 | Schema: migration SQL + seed script | DONE | feature/schema; 001_schema.sql + 002_seed.sql applied; sessions table to be added in auth feature |
 | 6 | Auth: login page + API + sessions | DONE | feature/auth; sessions table added in 003_sessions.sql; 5 reference sheets created in docs/ |
 | 7 | Admin: create questions | DONE | feature/questions merged; POST + GET /api/questions, admin page (form + live pool), lib/types.ts, login page restyled |
-| 8 | Admin: create assessments (time limit, link questions) | pending | feature/assessments |
+| 8 | Admin: create assessments (time limit, link questions) | in progress | feature/assessments; POST /api/assessments written + fixed; GET + admin page next |
 | 9 | Student dashboard (upcoming/finished) | pending | feature/student-dashboard |
 | 10 | Exam page + timer auto-submit | pending | feature/exam |
 | 11 | Results + visibility control | pending | feature/results |
-| 12 | Test, polish, README.md | pending | feature/polish |
-
+| 12 | Test, polish, README.md | pending | feature/polish; includes statistics dashboard (per-assessment graphs, leaderboards, overview line chart) |
 ## 8. Planned Architecture (initial draft, refined during planning)
-
 ```
 QuizApp/
 ├── src/
@@ -185,11 +152,8 @@ QuizApp/
 │                       # WHY.md (design-decision log, one entry per merge)
 └── README.md
 ```
-
 ---
-
 ## Session Checklist (for the AI at the start of every session)
-
 - [ ] Read this AGENTS.md
 - [ ] Check current git state and branch
 - [ ] Read the task plan (section 7) and continue from where we stopped

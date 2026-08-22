@@ -134,16 +134,3 @@ Rule of thumb: 4xx = the CLIENT's fault (tell them what), 5xx = OUR fault
 - Server (default): runs on the server, can await DB/API calls
 - Client: needs `"use client";` as the first line — runs in the browser, can
   use state, events, fetch (all React pieces live in REFERENCE_REACT.md)
-
-## Imports & config
-
-### The `@/` alias
-- **Syntax:** `import pool from "@/lib/db";`
-- **Does:** `@/` = the project root (tsconfig `paths`). No relative `../../` hell
-
-### `npm run dev` / `npm run build` / `npm run lint`
-- dev = local server with hot reload; build = production compile; lint = eslint
-
-## Coming in later features (preview)
-- `redirect()` from `next/navigation` (server-side redirects)
-- `revalidatePath()` (refresh data after mutations)

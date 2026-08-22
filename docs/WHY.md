@@ -214,3 +214,80 @@ buttons, red/green alert boxes). The user authors the logic; the AI authors the
 Tailwind — so consistency is automatic instead of aspirational. The user can
 still *read* every class (they're plain-English utilities), which is enough to
 debug. Styling stays out of the learning stack and out of the critical path.
+
+---
+
+## feature/assessments — merged 2026-08-22
+
+### Why BEGIN/COMMIT/ROLLBACK (a transaction) for creating an assessment
+Creating an assessment is **two writes**: one row in `assessments`, N rows in
+`assessment_questions`. Without a transaction, link 3 could fail and leave an
+orphaned assessment with 2 links — committed, visible, incomplete. `BEGIN`
+holds both writes invisibly; `COMMIT` makes them permanent together, `ROLLBACK`
+erases both on any failure. The DB version of "both git commits land or neither."
+
+### Why `pool.connect()` for the transaction, not `pool.query`
+A transaction must run on **one connection** — `BEGIN` on connection A and
+`COMMIT` on connection B are unrelated. `pool.query` grabs a random connection
+per call, so it can't hold a transaction. `pool.connect()` checks out one
+client, `client.query('BEGIN')…client.query('COMMIT')` stays on that client,
+and `finally { client.release() }` returns it. Reads like `GET` can stay on
+`pool.query` because they are single statements.
+
+### Why the API re-validates before the DB (and with specific messages)
+The DB's `CHECK (ends_at > starts_at)` would 500 on a backwards window. The
+API checks the same rules *plus* product rules (`starts_at` must be future,
+at least one question) and returns a **specific 400 per field** ("Pick at least
+one question", "Starts at must be in the future"). The old generic "Bad Request"
+hid which field failed — the AM/PM bug proved a generic message costs hours.
+Same rules, two layers: friendly at the door, absolute at the vault.
+
+### Why `starts_at` must be future (and why AM/PM bit us)
+A past window creates an assessment that is already closed on creation — useful
+nowhere, confusing everywhere. `new Date(starts_at) < new Date()` enforces
+"future only" in the API. The `datetime-local` input has no AM/PM label beyond
+the clock you type — `02:00` vs `14:00` is a 12-hour gap, and the validation
+correctly rejected the AM time as past. Lesson: show the exact server message
+(`err.error`) instead of a generic one, or the user hunts blind.
+
+### Why `question_ids: number[]` and `order_index = loop index`
+The picker is a shopping cart — checked IDs live in `selectedQuestionIds`. The
+array order *is* the display order, so `order_index = i` needs no extra UI.
+Sending IDs (not full objects) keeps the payload small; the link table adds
+`order_index` and per-question `marks` on the server. Alternatives (drag-and-drop
+ordering, per-question marks in the form) are polish-phase complexity.
+
+### Why one GET nests questions with `jsonb_agg` + `LEFT JOIN` + `FILTER`
+The page needs **one assessment object with a `questions` array inside**. Three
+tables form a chain: assessments ← links ← questions. `LEFT JOIN` keeps
+assessments with zero questions (plain `JOIN` would drop drafts). `json_build_object`
+bundles one question's columns, `jsonb_agg(... ORDER BY order_index)` collects
+them, `FILTER (WHERE q.id IS NOT NULL)` stops the empty case from becoming
+`[{"id":null,…}]`, and `COALESCE(…, '[]'::jsonb)` turns no-questions into `[]`.
+`GROUP BY a.id` collapses the flat join rows (one per link) into one row per
+assessment. `jsonb_agg` (not `json_agg`) is required because `'[]'::jsonb` is
+`jsonb` — `COALESCE` needs matching types, the 500 we hit. One query, nested
+shape, no JS assembly.
+
+### Why `lib/types.ts` mirrors `json_build_object` keys exactly
+`AssessmentWithQuestions` is a photograph of the GET response. Every
+`'key', value` in `json_build_object` becomes a field in the `questions`
+sub-object. If SQL says `'text'`, TypeScript must say `text` — `question_text`
+would be `undefined` at runtime while the compiler stays quiet. `starts_at`/
+`ends_at` are `string` (JSON turns `TIMESTAMP` → ISO string), `description`
+is `string | null` (nullable column), `questions` is the array-of-objects.
+
+### Why form + picker + roster live on one page
+Creating an assessment is an *edit-and-verify* loop: pick, set window, see it
+land. A separate "create" page and "list" page would break the feedback — did
+it save? Two-column layout (form left, roster right) shows cause and effect
+without navigation. The picker lives inside the form because `selectedQuestionIds`
+is part of the POST body; the roster refreshes via `loadAssessments()`
+(read-after-write) so the list is the server's truth, not an optimistic guess.
+
+### Why the admin nav pill between Questions and Assessments
+Two admin managers share one segment (`/admin`). A pill nav (`Questions` /
+`Assessments`) with active = white makes the second manager discoverable — the
+earlier `← Back` button hid the feature. The nav lives in each page's header
+(styling domain) so the logic page stays focused, and `router.push` keeps it a
+client navigation without a full reload.
